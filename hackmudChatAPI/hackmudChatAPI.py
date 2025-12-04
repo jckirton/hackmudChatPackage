@@ -54,22 +54,30 @@ class ChatAPI:
                 badToken=True, BTReason="no chat API token present in config."
             )
 
-        self.test_token()
+        token_test = self.test_token()
+
+        while not token_test:
+            token_test = self.get_token(badToken=True, BTReason="bad token.")
 
         self.users = self.get_users()
 
-    def test_token(self):
+    def test_token(self, token=None):
         import requests
+
+        if token is None:
+            token = self.token
 
         response = requests.post(
             url="https://www.hackmud.com/mobile/account_data.json",
             headers=self.header,
-            json={"chat_token": self.token},
+            json={"chat_token": token},
         ).content
 
         if response == b"":
             print("Token invalid.")
-            self.get_token(badToken=True)
+            return False
+        else:
+            return True
 
     def load_config(self):
         import json
@@ -91,7 +99,7 @@ class ChatAPI:
         chat_pass: str | None = None,
         badToken: bool = False,
         BTReason: str = "reason unknown.",
-    ) -> None:
+    ) -> bool:
         """
         Gets a chat API token from the inputted chat_pass, which is obtained from running "chat_pass" in-game.
 
@@ -113,28 +121,30 @@ class ChatAPI:
             chat_pass = input("chat_pass password: ")
 
         if chat_pass != "":
-            while True:
-                token = json.loads(
-                    requests.post(
-                        url="https://www.hackmud.com/mobile/get_token.json",
-                        headers=self.header,
-                        json={"pass": chat_pass},
-                    ).content
-                ).get("chat_token", None)
+            newToken = json.loads(
+                requests.post(
+                    url="https://www.hackmud.com/mobile/get_token.json",
+                    headers=self.header,
+                    json={"pass": chat_pass},
+                ).content
+            ).get("chat_token", None)
 
-                if token is not None:
-                    self.token = token
-                    break
-                else:
-                    print("Invalid chat_pass.")
-                    chat_pass = input("chat_pass password: ")
-
-            self.config["chat_token"] = self.token
-
-            self.save_config()
-
-            if self.token_refresh:
-                quit()
+            if self.test_token(newToken):
+                print("New token generated.")
+                self.token = newToken
+                self.config["chat_token"] = newToken
+                self.save_config()
+                print("New token saved.")
+                if self.token_refresh:
+                    quit()
+                return True
+            else:
+                print("Bad chat_pass. No new token.")
+                self.load_config()
+                self.token = self.config.get("chat_token", None)
+                if self.token_refresh:
+                    quit()
+                return False
 
     def get_users(self) -> list[str]:
         import requests
@@ -154,7 +164,7 @@ class ChatAPI:
 
         return list(self.config["users"].keys())
 
-    def send(self, user: str, channel: str, msg: str) -> None:
+    def send(self, user: str, channel: str, msg: str) -> Response:
         """
         Sends a message from the inputted user to the inputted channel containing the inputted msg.
 
@@ -172,13 +182,13 @@ class ChatAPI:
             "msg": msg,
         }
 
-        requests.post(
+        return requests.post(
             url="https://www.hackmud.com/mobile/create_chat.json",
             headers=self.header,
             json=payload,
         )
 
-    def tell(self, user: str, target: str, msg: str) -> None:
+    def tell(self, user: str, target: str, msg: str) -> Response:
         """
         Sends a message from the inputted user to the inputted target containing the inputted msg.
 
@@ -196,7 +206,7 @@ class ChatAPI:
             "msg": msg,
         }
 
-        requests.post(
+        return requests.post(
             url="https://www.hackmud.com/mobile/create_chat.json",
             headers=self.header,
             json=payload,
