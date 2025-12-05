@@ -5,5 +5,6 @@ from .package_data import PACKAGE_VERSION
 __version__ = PACKAGE_VERSION
 
 from .hackmudChatAPI import ChatAPI
+from .types import ChatMessage, TokenError
 
-__all__ = ["ChatAPI"]
+__all__ = ["ChatAPI", "ChatMessage", "TokenError"]

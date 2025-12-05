@@ -4,6 +4,8 @@ from .package_data import CODE_VERSION
 
 __version__ = CODE_VERSION
 
+from .types import ChatMessage, TokenError
+
 
 class ChatAPI:
     # import requests
@@ -105,7 +107,23 @@ class ChatAPI:
 
         Args:
             chat_pass (str | None, optional): The chat_pass to get the token from. If one is not given, prompts for it in the terminal. Defaults to None.
+            badToken (bool, optional): If a token is being generated due to encountering a bad token. Defaults to False.
+            BTReason (str, optional): The reason the token is bad. Defaults to "reason unknown.".
+
+        Raises:
+            TokenError: If badToken and the "ErrorOnBadToken" setting are True, a TokenError is raised.
+
+        Returns:
+            bool: If a token was successfully generated.
         """
+
+        """
+        Gets a chat API token from the inputted chat_pass, which is obtained from running "chat_pass" in-game.
+
+        Args:
+            chat_pass (str | None, optional): The chat_pass to get the token from. If one is not given, prompts for it in the terminal. Defaults to None.
+        """
+
         import requests
         import json
 
@@ -113,7 +131,7 @@ class ChatAPI:
 
         if badToken:
             if self.config["ErrorOnBadToken"]:
-                raise ConnectionError(f"Bad chat API token - {BTReason}")
+                raise TokenError(f"Bad chat API token - {BTReason}")
             else:
                 print("Requesting new token.")
 
@@ -218,17 +236,17 @@ class ChatAPI:
         after: int | float | None = 60,
         before: int | float | None = None,
         users: list[str] = None,
-    ) -> dict:
+    ) -> dict[str, list[ChatMessage]]:
         """
         Returns the messages recieved by the inputted users within the given before and after parameters.
 
         Args:
             after (int | float, optional): Number of seconds before "now". Defaults to 60.
-            before (int | float, optional): Number of seconds before "now". Defaults to 0.
+            before (int | float, optional): Number of seconds before "now". Defaults to None.
             users (list[str]): A list of the users who you want to read the recieved messages of. Defaults to all users.
 
         Returns:
-            dict: The "chats" component of the request return content.
+            dict: The "chats" component of the request return content. Is a dictionary of the fetched users and a respective list of messages.
         """
         import requests
         import json
