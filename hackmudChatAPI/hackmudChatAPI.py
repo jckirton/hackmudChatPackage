@@ -32,7 +32,7 @@ class ChatAPI:
             self.log("Config successfully loaded.")
         except FileNotFoundError:
 
-            self.log(f"Config file not found at '{repr(self.config_file)}'.")
+            self.log(f"Config file not found at {repr(self.config_file)}.")
 
             self.log("Setting base config...")
             self.config = {
@@ -41,7 +41,7 @@ class ChatAPI:
                 "ErrorOnBadToken": False,
             }
 
-            self.log(f"Creating new config file at '{repr(self.config_file)}'...")
+            self.log(f"Creating new config file at {repr(self.config_file)}...")
             self.save_config()
             self.log("New config file created.")
             self.load_config()
