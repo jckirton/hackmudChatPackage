@@ -1,5 +1,11 @@
 # README
 
+This is my hackmud chat API module, as a module.
+
+It is designed to be gotten as a package from PyPI via `pip`, but I believe you can copy the `hackmudChatAPI` folder into your workspace and use it as a module like that.
+
+Better usage docs coming sometime in the future.
+
 ## Usage
 
 Place this at the start of your python file:
