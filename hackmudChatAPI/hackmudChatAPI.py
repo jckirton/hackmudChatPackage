@@ -66,6 +66,8 @@ class ChatAPI:
             self.config["ErrorOnBadToken"] = True
             self.save_config()
 
+        self.load_config()
+
         if self.token is None:
             self.log("No chat API token present in config.")
             self.get_token(
@@ -139,8 +141,13 @@ class ChatAPI:
         import json
 
         with open(self.config_file) as f:
+            if len(f.read()) == 0:
+                raise FileNotFoundError
+            else:
+                f.seek(0)
+
             self.config: dict = json.load(f)
-            self.url: dict = self.config.get("url")
+            self.url: dict = self.config.get("url", "https://www.hackmud.com")
             self.header: dict = self.config.get("header")
             self.token: str = self.config.get("chat_token")
 
