@@ -58,15 +58,18 @@ class ChatAPI:
         if self.header is None:
             self.log("API header not present in config - saving base definition.")
             self.config["header"] = {"Content-Type": "application/json"}
-            self.header = self.config.get("header", None)
+            self.header = self.config.get("header")
             self.save_config()
 
         if self.config.get("ErrorOnBadToken") is None:
             self.log("ErrorOnBadToken not present in config - saving base definition.")
-            self.config["ErrorOnBadToken"] = True
+            self.config["ErrorOnBadToken"] = False
             self.save_config()
 
         self.load_config()
+
+        if self.token_refresh:
+            self.get_token()
 
         if self.token is None:
             self.log("No chat API token present in config.")
@@ -82,7 +85,7 @@ class ChatAPI:
 
         self.log("Retriving account data...")
         self.get_users()
-        self.users = self.config.get("users")
+        self.users: list[str] | None = self.config.get("users")
         self.log("Account data retrieved.")
 
         self.log("Instance configuration:")
@@ -148,8 +151,8 @@ class ChatAPI:
 
             self.config: dict = json.load(f)
             self.url: dict = self.config.get("url", "https://www.hackmud.com")
-            self.header: dict = self.config.get("header")
-            self.token: str = self.config.get("chat_token")
+            self.header: dict | None = self.config.get("header")
+            self.token: str | None = self.config.get("chat_token")
 
     def save_config(self):
         import json
@@ -225,9 +228,12 @@ class ChatAPI:
                 self.load_config()
                 if self.token_refresh:
                     quit()
+                    return True
                 return False
+        else:
+            return False
 
-    def get_users(self) -> list[str]:
+    def get_users(self) -> dict:
         import requests
         import json
 
@@ -299,7 +305,7 @@ class ChatAPI:
         /,
         after: int | float | None = 60,
         before: int | float | None = None,
-        users: list[str] = None,
+        users: list[str] | None = None,
     ) -> dict[str, list[ChatMessage]]:
         """
         Returns the messages recieved by the inputted users within the given before and after parameters.
@@ -344,4 +350,4 @@ def token_refresh():
     Gets a new token for your config.json.
     """
 
-    ChatAPI(token_refresh=True).get_token()
+    ChatAPI(token_refresh=True)
