@@ -85,7 +85,7 @@ class ChatAPI:
 
         self.log("Retriving account data...")
         self.get_users()
-        self.users: list[str] | None = self.config.get("users")
+        self.users: list[str] = self.config.get("users", [])
         self.log("Account data retrieved.")
 
         self.log("Instance configuration:")
