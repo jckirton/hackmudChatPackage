@@ -131,9 +131,9 @@ class ChatAPI:
             url=f"{self.url}/mobile/account_data.json",
             headers=self.header,
             json={"chat_token": token},
-        ).content
+        )
 
-        if response == b"":
+        if response.status_code == 401:
             self.log("Token invalid.")
             return False
         else:
@@ -334,13 +334,21 @@ class ChatAPI:
             "after": ((now - after) if after else None),
         }
 
-        chats: dict = json.loads(
-            requests.post(
+        response = requests.post(
+            url=f"{self.url}/mobile/chats.json",
+            headers=self.header,
+            json=payload,
+        )
+
+        while response.status_code == 429:
+            self.log("Reading ratelimit hit, requesting again...")
+            response = requests.post(
                 url=f"{self.url}/mobile/chats.json",
                 headers=self.header,
                 json=payload,
-            ).content
-        )["chats"]
+            )
+
+        chats: dict = json.loads(response.content)["chats"]
 
         return chats
 
