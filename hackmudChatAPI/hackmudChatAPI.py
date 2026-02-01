@@ -239,13 +239,21 @@ class ChatAPI:
 
         self.load_config()
 
-        accountData: dict = json.loads(
-            requests.post(
+        response = requests.post(
+            url=f"{self.url}/mobile/account_data.json",
+            headers=self.header,
+            json={"chat_token": self.token},
+        )
+
+        while response.status_code == 429:
+            self.log("Account data ratelimit hit - requesting again...")
+            response = requests.post(
                 url=f"{self.url}/mobile/account_data.json",
                 headers=self.header,
                 json={"chat_token": self.token},
-            ).content
-        )["users"]
+            )
+
+        accountData: dict = json.loads(response.content)["users"]
 
         self.config["users"] = list(accountData.keys())
 
