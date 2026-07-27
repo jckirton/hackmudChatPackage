@@ -19,6 +19,18 @@ class ChatAPI:
         token_refresh: bool = False,
         verbosity: int = 1,
     ):
+        """Create a ChatAPI instance.
+
+        Args:
+            config_file (str, optional): Path to the ChatAPI config file. Defaults to f"{sys.path[0]}/config.json".
+            token_refresh (bool, optional): If this instance exists solely to update the token in the config.
+              Runs `quit()` after taking a chat_pass and attempting to fetch a token.
+              Was intended for my implementation of `python3 -m hackmudChatAPI`, but I decided to have it accessable.
+              Defaults to False.
+            verbosity (int, optional): The verbosity level of this ChatAPI instance.
+              `ChatAPI.log` calls with a verbosity <= to this value will appear in stdout.
+              Defaults to 1.
+        """
         self.verbosity = verbosity
         self.token_refresh = token_refresh
         self.config_file = config_file
@@ -97,14 +109,16 @@ class ChatAPI:
         self.log(f"Users: {repr(self.users)}")
         self.log("ChatAPI instance initialised.")
 
-    def log(self, input, verbosity: int = 1, level: int = 0):
-        """
-        My logging function.
+    def log(
+        self, input, verbosity: int = 1, level: int = 0, label: bool = True, **kwargs
+    ):
+        """My logging function.
 
         Args:
             input (any): The thing being logged.
             verbosity (int, optional): The verbosity level at which it will appear. Defaults to 1.
             level (int, optional): The level/type of the log. Defaults to 0. If a level >5 is given, it will be set to 5.
+            label (bool, optional): If the log level label will be shown. Defaults to True.
 
                 The log levels (in order) are:
                 - (0) LOG
@@ -116,11 +130,16 @@ class ChatAPI:
         """
         LOG_LEVELS = ["LOG", "INFO", "DEBUG", "WARN", "ERROR", "FATAL"]
         if level > len(LOG_LEVELS) - 1:
-            level = len(LOG_LEVELS)
+            level = len(LOG_LEVELS) - 1
         if self.verbosity >= verbosity:
-            print(f"[{LOG_LEVELS[level]}] {input}")
+            print(f"{f"[{LOG_LEVELS[level]}]" if label else ""} {input}", **kwargs)
 
-    def test_token(self, token=None):
+    def test_token(self, token: str | None = None) -> bool:
+        """Return if an API token is valid.
+
+        Args:
+            token (str | None, optional): The token to test. Defaults to `self.token`.
+        """
         import requests
 
         if token is None:
@@ -141,6 +160,11 @@ class ChatAPI:
             return True
 
     def load_config(self):
+        """Load the ChatAPI config JSON located at `self.config_file`.
+
+        Raises:
+            FileNotFoundError: The file specified in `self.config_file` does not exist, or was empty.
+        """
         import json
 
         with open(self.config_file) as f:
@@ -155,6 +179,7 @@ class ChatAPI:
             self.token: str | None = self.config.get("chat_token")
 
     def save_config(self):
+        """Write the current ChatAPI config to disk in `self.config_file`."""
         import json
 
         with open(self.config_file, "w") as f:
@@ -166,11 +191,13 @@ class ChatAPI:
         badToken: bool = False,
         BTReason: str = "reason unknown.",
     ) -> bool:
-        """
-        Gets a chat API token from the inputted chat_pass, which is obtained from running "chat_pass" in-game.
+        """Gets a chat API token from the inputted chat_pass.
+
+        Attempts to get a chat API token using the given `chat_pass`, which is obtained from running `chat_pass` in the hackmud client.
+        If a token is successfully generated, `self.token` and `self.config` is updated, and `self.save_config` is called.
 
         Args:
-            chat_pass (str | None, optional): The chat_pass to get the token from. If one is not given, prompts for it in the terminal. Defaults to None.
+            chat_pass (str | None, optional): The `chat_pass` to get the token from. If one is not given, prompts for it in the terminal. Defaults to None.
             badToken (bool, optional): If a token is being generated due to encountering a bad token. Defaults to False.
             BTReason (str, optional): The reason the token is bad. Defaults to "reason unknown.".
 
@@ -179,13 +206,6 @@ class ChatAPI:
 
         Returns:
             bool: If a token was successfully generated.
-        """
-
-        """
-        Gets a chat API token from the inputted chat_pass, which is obtained from running "chat_pass" in-game.
-
-        Args:
-            chat_pass (str | None, optional): The chat_pass to get the token from. If one is not given, prompts for it in the terminal. Defaults to None.
         """
 
         import requests
@@ -286,7 +306,7 @@ class ChatAPI:
 
     def tell(self, user: str, target: str, msg: str) -> Response:
         """
-        Sends a message from the inputted user to the inputted target containing the inputted msg.
+        Sends a tell from the inputted user to the inputted target containing the inputted msg.
 
         Args:
             user (str): The user to send the message from.
@@ -324,7 +344,7 @@ class ChatAPI:
             users (list[str]): A list of the users who you want to read the recieved messages of. Defaults to all users.
 
         Returns:
-            dict: The "chats" component of the request return content. Is a dictionary of the fetched users and a respective list of messages.
+            dict: The "chats" component of the API request return content. Is a dictionary of the fetched users and a respective list of messages.
         """
         import requests
         import json
